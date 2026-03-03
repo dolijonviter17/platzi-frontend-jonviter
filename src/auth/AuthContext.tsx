@@ -1,18 +1,7 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
 import { apiFetch } from "../api/client";
-import type { LoginResponse } from "../types";
-
-type LoginPayload = { username: string; password: string };
-
-type AuthContextValue = {
-  token: string | null;
-  isAuthed: boolean;
-  userEmail: string | null;
-  login: (payload: LoginPayload) => Promise<void>;
-  logout: () => void;
-};
-
-const AuthContext = createContext<AuthContextValue | null>(null);
+import type { AuthContextValue, LoginPayload, LoginResponse } from "../types";
+import { AuthContext } from "./auth-context";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(() =>
@@ -25,11 +14,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAuthed = !!token;
 
   async function login({ username, password }: LoginPayload) {
-    const data = await apiFetch<
-      LoginResponse,
-      { email: string; password: string }
-    >("/auth/login", { method: "POST", body: { email: username, password } });
-
+    const data = await apiFetch<LoginResponse>("/auth/login", {
+      method: "POST",
+      data: { email: username, password },
+    });
     localStorage.setItem("access_token", data.access_token);
     localStorage.setItem("user_email", username);
     setToken(data.access_token);

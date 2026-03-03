@@ -63,13 +63,10 @@ export default function AddProductPage() {
         images: imagesArr.length ? imagesArr : ["https://placehold.co/600x400"],
       };
 
-      const created = await apiFetch<Product, CreateProductPayload>(
-        "/products",
-        {
-          method: "POST",
-          body: payload,
-        },
-      );
+      const created = await apiFetch<Product>("/products", {
+        method: "POST",
+        data: payload,
+      });
 
       addProductLocal(created);
       setToast({ type: "success", message: "Produk berhasil ditambahkan" });

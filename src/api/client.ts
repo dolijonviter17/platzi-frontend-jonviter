@@ -1,45 +1,46 @@
+import axios, { AxiosError, AxiosRequestConfig } from "axios";
+
 const BASE_URL = "https://api.escuelajs.co/api/v1";
 
 export function getToken(): string | null {
   return localStorage.getItem("access_token");
 }
 
-type ApiFetchOptions<TBody> = {
-  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
-  body?: TBody;
-  auth?: boolean;
-};
+export const api = axios.create({
+  baseURL: BASE_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+api.interceptors.request.use((config) => {
+  const token = getToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
 export async function apiFetch<TResponse, TBody = unknown>(
   path: string,
-  { method = "GET", body, auth = false }: ApiFetchOptions<TBody> = {},
+  options: AxiosRequestConfig<TBody> = {},
 ): Promise<TResponse> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
+  try {
+    const response = await api.request<TResponse>({
+      url: path,
+      ...options,
+    });
 
-  if (auth) {
-    const token = getToken();
-    if (token) headers.Authorization = `Bearer ${token}`;
+    return response.data;
+  } catch (error) {
+    const err = error as AxiosError<any>;
+
+    const message =
+      err.response?.data?.message ||
+      err.response?.data?.error ||
+      err.message ||
+      "Request failed";
+
+    throw new Error(Array.isArray(message) ? message.join(", ") : message);
   }
-
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
-
-  const text = await res.text();
-  const data = text ? (JSON.parse(text) as unknown) : null;
-
-  if (!res.ok) {
-    const msg =
-      (data as any)?.message ||
-      (data as any)?.error ||
-      `Request failed (${res.status})`;
-    const message = Array.isArray(msg) ? msg.join(", ") : String(msg);
-    throw new Error(message);
-  }
-
-  return data as TResponse;
 }

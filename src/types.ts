@@ -17,3 +17,13 @@ export type LoginResponse = {
   access_token: string;
   refresh_token: string;
 };
+
+export type LoginPayload = { username: string; password: string };
+
+export type AuthContextValue = {
+  token: string | null;
+  isAuthed: boolean;
+  userEmail: string | null;
+  login: (payload: LoginPayload) => Promise<void>;
+  logout: () => void;
+};
